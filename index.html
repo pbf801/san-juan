@@ -10,37 +10,22 @@
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     
     <style>
-        /* Diseño base premium */
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             font-family: 'Montserrat', sans-serif;
             background: linear-gradient(-45deg, #0f0c29, #302b63, #24243e, #0f0c29);
             background-size: 400% 400%;
             animation: gradientBG 15s ease infinite;
-            color: #fff;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            overflow: hidden;
+            color: #fff; display: flex; flex-direction: column; align-items: center;
+            justify-content: center; min-height: 100vh; overflow: hidden;
         }
 
         @keyframes gradientBG { 0% {background-position: 0% 50%;} 50% {background-position: 100% 50%;} 100% {background-position: 0% 50%;} }
 
-        /* Efecto Cristal (Glassmorphism) */
         .glass-card {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 24px;
-            padding: 40px;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-            width: 90%;
-            max-width: 420px;
-            text-align: center;
-            transition: all 0.4s ease;
+            background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 24px; padding: 40px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); width: 90%; max-width: 420px; text-align: center;
         }
 
         h1 { font-weight: 900; font-size: 2.2rem; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 2px; }
@@ -50,31 +35,28 @@
         .input-group i { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #888; }
         
         input {
-            width: 100%; padding: 16px 16px 16px 45px;
-            border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);
-            background: rgba(0,0,0,0.2); color: white;
-            font-size: 15px; font-family: 'Montserrat', sans-serif;
-            outline: none; transition: 0.3s;
+            width: 100%; padding: 16px 16px 16px 45px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(0,0,0,0.2); color: white; font-size: 15px; font-family: 'Montserrat', sans-serif; outline: none; transition: 0.3s;
         }
         input:focus { border-color: #00ffcc; box-shadow: 0 0 10px rgba(0,255,204,0.3); background: rgba(0,0,0,0.4); }
 
         button {
-            background: linear-gradient(135deg, #00c6ff, #0072ff);
-            color: white; border: none; padding: 16px; font-size: 16px;
-            border-radius: 12px; cursor: pointer; font-weight: 800; width: 100%;
-            margin-top: 10px; box-shadow: 0 10px 20px rgba(0, 114, 255, 0.3);
+            background: linear-gradient(135deg, #00c6ff, #0072ff); color: white; border: none; padding: 16px; font-size: 16px;
+            border-radius: 12px; cursor: pointer; font-weight: 800; width: 100%; margin-top: 10px; box-shadow: 0 10px 20px rgba(0, 114, 255, 0.3);
             transition: all 0.3s; text-transform: uppercase; letter-spacing: 1px;
         }
         button:hover { transform: translateY(-3px); box-shadow: 0 15px 25px rgba(0, 114, 255, 0.5); }
-        button:active { transform: translateY(1px); }
-
         .btn-secondary { background: rgba(255,255,255,0.1); box-shadow: none; border: 1px solid rgba(255,255,255,0.2); margin-top: 20px;}
-        .btn-secondary:hover { background: rgba(255,255,255,0.2); box-shadow: none; }
 
-        .estado-box { font-size: 22px; font-weight: 800; margin: 30px 0; padding: 20px; background: rgba(0,0,0,0.3); border-radius: 12px; color: #00ffcc; }
-        .oculto { display: none !important; }
+        /* Nuevas tarjetas de info del usuario */
+        .info-track { background: rgba(0,0,0,0.4); padding: 15px; border-radius: 12px; margin-bottom: 15px; text-align: left; border-left: 4px solid #00c6ff;}
+        .info-track p { margin: 5px 0; font-size: 14px; color: #ccc;}
+        .info-track span { color: #fff; font-weight: bold; font-size: 16px;}
         
-        /* Animación de pulso para el estado */
+        .posicion-box { background: rgba(255, 152, 0, 0.2); border: 1px solid #ff9800; padding: 12px; border-radius: 10px; margin-bottom: 20px; color: #ffbc00; font-weight: 800; font-size: 18px;}
+
+        .estado-box { font-size: 22px; font-weight: 800; margin: 20px 0; padding: 20px; background: rgba(0,0,0,0.3); border-radius: 12px; color: #00ffcc; }
+        .oculto { display: none !important; }
         .pulse { animation: pulso 2s infinite; }
         @keyframes pulso { 0% { transform: scale(1); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
     </style>
@@ -90,28 +72,18 @@
           projectId: "sanjuan-music"
         };
 
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
-
+        const db = getDatabase(initializeApp(firebaseConfig));
         let miCancionId = localStorage.getItem('sanJuanCancionId');
         let ultimoEstado = "";
 
-        window.onload = () => {
-            if (miCancionId) {
-                mostrarPantallaEstado();
-                escucharMiCancion();
-            }
-        };
+        window.onload = () => { if (miCancionId) { mostrarPantallaEstado(); escucharColaCompleta(); } };
 
         window.pedirPermisoNotificaciones = function() {
-            if ("Notification" in window && Notification.permission !== "granted") {
-                Notification.requestPermission();
-            }
+            if ("Notification" in window && Notification.permission !== "granted") Notification.requestPermission();
         };
 
         window.enviarCancion = function() {
-            pedirPermisoNotificaciones(); // Pedimos permiso al hacer clic
-            
+            pedirPermisoNotificaciones(); 
             const nombre = document.getElementById('nombre').value;
             const cancion = document.getElementById('cancion').value;
             
@@ -125,14 +97,11 @@
                     miCancionId = nuevaPeticionRef.key;
                     localStorage.setItem('sanJuanCancionId', miCancionId);
                     ultimoEstado = "En cola 🕒";
-                    
                     mostrarPantallaEstado();
-                    escucharMiCancion();
+                    escucharColaCompleta();
                     btn.innerHTML = '¡Enviar al DJ! <i class="fas fa-rocket"></i>';
                 });
-            } else {
-                alert("¡Eh! Faltan datos 🔥");
-            }
+            } else { alert("¡Eh! Faltan datos 🔥"); }
         }
 
         function mostrarPantallaEstado() {
@@ -141,56 +110,75 @@
         }
 
         window.pedirOtra = async function() {
-            // Borramos la canción de la base de datos para limpiar la cola del DJ
-            if(miCancionId) {
-                await remove(ref(db, 'peticiones/' + miCancionId));
-            }
-            // Reseteamos la web
-            localStorage.removeItem('sanJuanCancionId');
-            miCancionId = null;
+            if(miCancionId) await remove(ref(db, 'peticiones/' + miCancionId));
+            localStorage.removeItem('sanJuanCancionId'); miCancionId = null;
             document.getElementById('pantalla-estado').classList.add('oculto');
             document.getElementById('form-pedir').classList.remove('oculto');
             document.getElementById('cancion').value = "";
-            document.getElementById('btn-pedir-otra').classList.add('oculto'); // Esconder el botón de nuevo
+            document.getElementById('btn-pedir-otra').classList.add('oculto'); 
         }
 
-        function escucharMiCancion() {
+        // Nueva función: Escucha toda la cola para calcular la posición
+        function escucharColaCompleta() {
             if(!miCancionId) return;
-            const miCancionRef = ref(db, 'peticiones/' + miCancionId);
+            const listaRef = ref(db, 'peticiones');
             
-            onValue(miCancionRef, (snapshot) => {
+            onValue(listaRef, (snapshot) => {
                 const data = snapshot.val();
-                if (data) {
-                    const textoEstado = document.getElementById('texto-estado');
-                    textoEstado.innerHTML = `<i class="fas fa-music"></i> <br><br> ${data.estado}`;
+                if (data && data[miCancionId]) {
+                    const miTrack = data[miCancionId];
                     
-                    // Comprobar si el estado ha cambiado para lanzar NOTIFICACIÓN
-                    if (ultimoEstado !== "" && data.estado !== ultimoEstado) {
-                        if ("Notification" in window && Notification.permission === "granted") {
-                            new Notification("🎧 VIP Music San Juan", {
-                                body: "Tu canción ha cambiado a: " + data.estado,
-                                icon: "https://cdn-icons-png.flaticon.com/512/1753/1753311.png"
-                            });
+                    // 1. Mostrar detalles de mi canción
+                    document.getElementById('track-elegido').innerText = miTrack.tema;
+                    document.getElementById('usuario-elegido').innerText = miTrack.usuario;
+                    
+                    // 2. Calcular mi posición en la cola
+                    let miPosicion = 0;
+                    // Firebase asegura que Object.keys mantenga el orden cronológico de creación
+                    for (let id of Object.keys(data)) {
+                        const estado = data[id].estado;
+                        // Solo contamos las que aún no han sonado o están activas
+                        if (!estado.includes("Finalizado") && !estado.includes("No Disponible")) {
+                            miPosicion++;
+                            if (id === miCancionId) break; // Si llegamos a la nuestra, paramos de contar
                         }
                     }
-                    ultimoEstado = data.estado;
+
+                    // 3. Mostrar el estado y la posición
+                    document.getElementById('texto-estado').innerHTML = miTrack.estado;
                     
-                    // Efecto confeti
-                    if(data.estado.includes("ESCENARIO") || data.estado.includes("Siguiente")) {
+                    const divPosicion = document.getElementById('posicion-box');
+                    if (miTrack.estado.includes("Finalizado") || miTrack.estado.includes("No Disponible") || miTrack.estado.includes("ESCENARIO")) {
+                        divPosicion.classList.add('oculto'); // Ocultamos el número si ya terminó o le toca
+                    } else {
+                        divPosicion.classList.remove('oculto');
+                        document.getElementById('num-posicion').innerText = miPosicion;
+                    }
+
+                    // 4. Lógica de Notificaciones y Confeti
+                    if (ultimoEstado !== "" && miTrack.estado !== ultimoEstado) {
+                        if ("Notification" in window && Notification.permission === "granted") {
+                            new Notification("🎧 VIP Music San Juan", { body: "Tu canción ha cambiado a: " + miTrack.estado });
+                        }
+                    }
+                    ultimoEstado = miTrack.estado;
+                    
+                    if(miTrack.estado.includes("ESCENARIO") || miTrack.estado.includes("Siguiente")) {
                         confetti({ particleCount: 150, spread: 80, origin: { y: 0.5 }, colors: ['#00c6ff', '#0072ff', '#ffffff'] });
                     }
 
-                    // Mostrar el botón de "Pedir otra" SOLO si está Finalizado o No Disponible
+                    // 5. Mostrar botón "Pedir otra" si es necesario
                     const btnOtra = document.getElementById('btn-pedir-otra');
-                    if(data.estado.includes("Finalizado") || data.estado.includes("No Disponible")) {
+                    if(miTrack.estado.includes("Finalizado") || miTrack.estado.includes("No Disponible")) {
                         btnOtra.classList.remove('oculto');
                     } else {
                         btnOtra.classList.add('oculto');
                     }
 
-                } else {
-                    // Si el DJ la borra a la fuerza
+                } else if (miCancionId) {
+                    // Si el DJ la borra a la fuerza de la base de datos
                     document.getElementById('texto-estado').innerText = "La sesión ha terminado 🎵";
+                    document.getElementById('posicion-box').classList.add('oculto');
                     document.getElementById('btn-pedir-otra').classList.remove('oculto');
                 }
             });
@@ -216,9 +204,20 @@
         </div>
 
         <div id="pantalla-estado" class="oculto">
-            <h3 style="font-weight: 500; font-size: 14px; color: #ccc;">STATUS DE TU TRACK:</h3>
-            <div id="texto-estado" class="estado-box pulse">Conectando...</div>
-            <p style="font-size: 12px; color: #888; margin-bottom: 10px;"><i class="fas fa-bell"></i> Activa el sonido, te avisaremos cuando sea tu turno.</p>
+            
+            <div class="info-track">
+                <p><i class="fas fa-music"></i> Track: <span id="track-elegido">...</span></p>
+                <p><i class="fas fa-user-circle"></i> VIP: <span id="usuario-elegido">...</span></p>
+            </div>
+
+            <div id="posicion-box" class="posicion-box pulse">
+                <i class="fas fa-list-ol"></i> Eres el número <span id="num-posicion">X</span> en la cola
+            </div>
+
+            <h3 style="font-weight: 500; font-size: 14px; color: #ccc; margin-top: 20px;">STATUS ACTUAL:</h3>
+            <div id="texto-estado" class="estado-box">Conectando...</div>
+            
+            <p style="font-size: 12px; color: #888; margin-bottom: 10px;"><i class="fas fa-bell"></i> Te avisaremos cuando sea tu turno.</p>
             
             <button id="btn-pedir-otra" class="btn-secondary oculto" onclick="pedirOtra()">Elegir nueva pista <i class="fas fa-redo"></i></button>
         </div>
