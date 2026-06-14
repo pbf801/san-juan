@@ -13,10 +13,12 @@
         .cancion-card { 
             background: #151515; border-left: 5px solid #00ffcc; padding: 20px; margin-bottom: 15px; 
             border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); display: flex; flex-direction: column; gap: 15px;
-            position: relative;
         }
         .info h3 { margin: 0 0 5px 0; font-size: 20px; display: flex; align-items: center; justify-content: space-between;}
         .info p { margin: 0; color: #888; font-weight: bold; }
+        
+        /* El super número para el DJ */
+        .num-badge { background: #00ffcc; color: #000; padding: 4px 12px; border-radius: 6px; margin-right: 12px; font-weight: 900; font-size: 22px;}
         
         .botones { display: flex; gap: 8px; flex-wrap: wrap; }
         button { 
@@ -25,7 +27,7 @@
         }
         button:hover { opacity: 0.8; transform: scale(1.05); }
         
-        .btn-orden { background: #333; color: white; padding: 5px 10px; font-size: 16px;}
+        .btn-orden { background: #333; color: white; padding: 8px 12px; font-size: 16px;}
         .btn-cola { background: #555; color: white; }
         .btn-sig { background: #ff9800; color: white; }
         .btn-esc { background: #00ffcc; color: black; }
@@ -51,29 +53,31 @@
         };
 
         const db = getDatabase(initializeApp(firebaseConfig));
-        let tracksLocales = []; // Para gestionar el reordenamiento
+        let tracksLocales = []; 
 
         window.cambiarEstado = (id, estado) => update(ref(db, 'peticiones/' + id), { estado });
         window.borrarCancion = (id) => remove(ref(db, 'peticiones/' + id));
 
+        // Nuevo sistema de reordenamiento ANTI-FALLOS
         window.mover = (index, direccion) => {
             if (direccion === 'arriba' && index > 0) {
-                let idActual = tracksLocales[index].id;
-                let idAnterior = tracksLocales[index - 1].id;
-                let timeActual = tracksLocales[index].timestamp;
-                let timeAnterior = tracksLocales[index - 1].timestamp;
+                let t1 = tracksLocales[index];
+                let t2 = tracksLocales[index - 1];
                 
-                // Intercambiamos los timestamps en la base de datos
-                update(ref(db, 'peticiones/' + idActual), { timestamp: timeAnterior });
-                update(ref(db, 'peticiones/' + idAnterior), { timestamp: timeActual });
+                // Actualización simultánea para evitar colisiones en Firebase
+                const updates = {};
+                updates['peticiones/' + t1.id + '/timestamp'] = t2.timestamp;
+                updates['peticiones/' + t2.id + '/timestamp'] = t1.timestamp;
+                update(ref(db), updates);
+                
             } else if (direccion === 'abajo' && index < tracksLocales.length - 1) {
-                let idActual = tracksLocales[index].id;
-                let idSiguiente = tracksLocales[index + 1].id;
-                let timeActual = tracksLocales[index].timestamp;
-                let timeSiguiente = tracksLocales[index + 1].timestamp;
+                let t1 = tracksLocales[index];
+                let t2 = tracksLocales[index + 1];
 
-                update(ref(db, 'peticiones/' + idActual), { timestamp: timeSiguiente });
-                update(ref(db, 'peticiones/' + idSiguiente), { timestamp: timeActual });
+                const updates = {};
+                updates['peticiones/' + t1.id + '/timestamp'] = t2.timestamp;
+                updates['peticiones/' + t2.id + '/timestamp'] = t1.timestamp;
+                update(ref(db), updates);
             }
         };
 
@@ -85,22 +89,31 @@
 
             if (data) {
                 for (let id in data) tracksLocales.push({ id, ...data[id] });
-                // Ordenar por el timestamp (orden cronológico o alterado por el DJ)
+                
+                // Ordenar por el timestamp estricto
                 tracksLocales.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
 
-                // 🧠 Lógica Inteligente: Auto-Siguiente
-                let primerActivo = tracksLocales.find(t => !t.estado.includes("Finalizado") && !t.estado.includes("No Disponible") && !t.estado.includes("ESCENARIO"));
-                if (primerActivo && primerActivo.estado.includes("En cola")) {
-                    cambiarEstado(primerActivo.id, '¡Prepárate! Siguiente 🎤');
-                    return; // Cortamos aquí porque esto volverá a disparar onValue automáticamente
+                // Lógica Inteligente Auto-Siguiente CORREGIDA
+                // 1. Comprobamos si YA HAY alguien con el estado "Siguiente" o "Escenario"
+                let haySiguiente = tracksLocales.some(t => t.estado.includes("Siguiente"));
+                
+                // 2. Si NO hay nadie en "Siguiente", buscamos al primer activo para ponérselo
+                if (!haySiguiente) {
+                    let primerActivo = tracksLocales.find(t => !t.estado.includes("Finalizado") && !t.estado.includes("No Disponible") && !t.estado.includes("ESCENARIO"));
+                    
+                    if (primerActivo && primerActivo.estado.includes("En cola")) {
+                        cambiarEstado(primerActivo.id, '¡Prepárate! Siguiente 🎤');
+                        // No ponemos return para que la interfaz cargue sin parpadear
+                    }
                 }
 
+                // Renderizamos la lista visual
                 tracksLocales.forEach((track, index) => {
                     listaDiv.innerHTML += `
                     <div class="cancion-card">
                         <div class="info">
                             <h3>
-                                <span><i class="fas fa-user-circle"></i> ${track.usuario}</span>
+                                <span><span class="num-badge">#${index + 1}</span> <i class="fas fa-user-circle"></i> ${track.usuario}</span>
                                 <div>
                                     <button class="btn-orden" onclick="mover(${index}, 'arriba')"><i class="fas fa-chevron-up"></i></button>
                                     <button class="btn-orden" onclick="mover(${index}, 'abajo')"><i class="fas fa-chevron-down"></i></button>
