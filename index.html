@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>San Juan DJ App</title>
+    
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, push, set, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        // Tu configuración exacta de Firebase
+        const firebaseConfig = {
+          apiKey: "AIzaSyCDHfrf1njnrhFuKiqZmPw39lEiXdOEcuc",
+          authDomain: "sanjuan-music.firebaseapp.com",
+          // IMPORTANTE: He añadido la URL de tu base de datos (asumiendo que elegiste servidor en Europa)
+          databaseURL: "https://sanjuan-music-default-rtdb.europe-west1.firebasedatabase.app",
+          projectId: "sanjuan-music",
+          storageBucket: "sanjuan-music.firebasestorage.app",
+          messagingSenderId: "324864950993",
+          appId: "1:324864950993:web:f3ce7ac4649960f2413bf0",
+          measurementId: "G-WT0MSHLHTJ"
+        };
+
+        // Inicializar Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // Hacer las funciones disponibles en la página para que el botón las encuentre
+        window.enviarCancion = function() {
+            const nombre = document.getElementById('nombre').value;
+            const cancion = document.getElementById('cancion').value;
+            
+            if(nombre && cancion) {
+                // Guardamos en la carpeta "peticiones" de la base de datos
+                const listaRef = ref(db, 'peticiones');
+                const nuevaPeticionRef = push(listaRef);
+                set(nuevaPeticionRef, {
+                    usuario: nombre,
+                    tema: cancion,
+                    estado: "En cola 🕒"
+                });
+                alert("¡Canción enviada con éxito!");
+                document.getElementById('cancion').value = ""; // Limpia la casilla de texto
+            } else {
+                alert("Por favor, rellena tu nombre y la canción.");
+            }
+        }
+
+        // Leer los datos en tiempo real para el DJ
+        const listaRef = ref(db, 'peticiones');
+        onValue(listaRef, (snapshot) => {
+            const data = snapshot.val();
+            const listaDiv = document.getElementById('listaDJ');
+            listaDiv.innerHTML = ""; // Vaciar la lista vieja para no duplicar
+            
+            if (data) {
+                for (let id in data) {
+                    listaDiv.innerHTML += `<p><strong>${data[id].usuario}</strong> pide: ${data[id].tema} <em>[${data[id].estado}]</em></p>`;
+                }
+            } else {
+                listaDiv.innerHTML = "<p>Aún no hay canciones en la cola.</p>";
+            }
+        });
+    </script>
+</head>
+<body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+
+    <h1 style="text-align: center;">🔥 Verbena San Juan 2026 🔥</h1>
+
+    <div style="border: 2px solid orange; border-radius: 10px; padding: 15px; margin-bottom: 30px; background-color: #fff9f0;">
+        <h2>Pedir Canción (Vista Invitado)</h2>
+        <input type="text" id="nombre" placeholder="Tu Nombre" style="padding: 8px; width: 90%; margin-bottom: 10px;"><br>
+        <input type="text" id="cancion" placeholder="Nombre de la canción y artista" style="padding: 8px; width: 90%; margin-bottom: 10px;"><br>
+        <button onclick="enviarCancion()" style="padding: 10px 20px; background-color: orange; color: white; border: none; border-radius: 5px; cursor: pointer;">Enviar al DJ</button>
+    </div>
+
+    <div style="border: 2px solid blue; border-radius: 10px; padding: 15px; background-color: #f0f8ff;">
+        <h2>Pantalla del DJ (En tiempo real)</h2>
+        <div id="listaDJ">Cargando canciones...</div>
+    </div>
+
+</body>
+</html>
