@@ -3,53 +3,85 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>San Juan 2026 - Pide tu canción</title>
+    <title>San Juan 2026 | VIP Music</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;500;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     
     <style>
+        /* Diseño base premium */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #111;
+            font-family: 'Montserrat', sans-serif;
+            background: linear-gradient(-45deg, #0f0c29, #302b63, #24243e, #0f0c29);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
             color: #fff;
-            text-align: center;
-            padding: 20px;
-            margin: 0;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             min-height: 100vh;
+            overflow: hidden;
         }
-        h1 { color: #ff5722; text-shadow: 0 0 10px #ff5722; animation: latir 2s infinite; }
-        .card {
-            background: #222;
-            border-radius: 15px;
-            padding: 30px;
-            box-shadow: 0 10px 30px rgba(255, 87, 34, 0.2);
-            width: 100%;
-            max-width: 400px;
-            transition: transform 0.3s;
+
+        @keyframes gradientBG { 0% {background-position: 0% 50%;} 50% {background-position: 100% 50%;} 100% {background-position: 0% 50%;} }
+
+        /* Efecto Cristal (Glassmorphism) */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            width: 90%;
+            max-width: 420px;
+            text-align: center;
+            transition: all 0.4s ease;
         }
+
+        h1 { font-weight: 900; font-size: 2.2rem; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 2px; }
+        .subtitle { font-weight: 300; font-size: 0.9rem; color: #aaa; margin-bottom: 30px; letter-spacing: 1px;}
+        
+        .input-group { position: relative; margin-bottom: 20px; }
+        .input-group i { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #888; }
+        
         input {
-            width: 90%; padding: 12px; margin: 10px 0;
-            border-radius: 8px; border: none; background: #333; color: white;
-            font-size: 16px; text-align: center;
+            width: 100%; padding: 16px 16px 16px 45px;
+            border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(0,0,0,0.2); color: white;
+            font-size: 15px; font-family: 'Montserrat', sans-serif;
+            outline: none; transition: 0.3s;
         }
+        input:focus { border-color: #00ffcc; box-shadow: 0 0 10px rgba(0,255,204,0.3); background: rgba(0,0,0,0.4); }
+
         button {
-            background: linear-gradient(45deg, #ff5722, #ff9800);
-            color: white; border: none; padding: 15px 30px; font-size: 18px;
-            border-radius: 25px; cursor: pointer; font-weight: bold; width: 100%;
-            margin-top: 15px; box-shadow: 0 4px 15px rgba(255, 87, 34, 0.4);
+            background: linear-gradient(135deg, #00c6ff, #0072ff);
+            color: white; border: none; padding: 16px; font-size: 16px;
+            border-radius: 12px; cursor: pointer; font-weight: 800; width: 100%;
+            margin-top: 10px; box-shadow: 0 10px 20px rgba(0, 114, 255, 0.3);
+            transition: all 0.3s; text-transform: uppercase; letter-spacing: 1px;
         }
-        button:hover { transform: scale(1.05); }
-        .estado-box { font-size: 24px; font-weight: bold; margin: 20px 0; color: #4CAF50; }
-        .oculto { display: none; }
-        @keyframes latir { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+        button:hover { transform: translateY(-3px); box-shadow: 0 15px 25px rgba(0, 114, 255, 0.5); }
+        button:active { transform: translateY(1px); }
+
+        .btn-secondary { background: rgba(255,255,255,0.1); box-shadow: none; border: 1px solid rgba(255,255,255,0.2); margin-top: 20px;}
+        .btn-secondary:hover { background: rgba(255,255,255,0.2); box-shadow: none; }
+
+        .estado-box { font-size: 22px; font-weight: 800; margin: 30px 0; padding: 20px; background: rgba(0,0,0,0.3); border-radius: 12px; color: #00ffcc; }
+        .oculto { display: none !important; }
+        
+        /* Animación de pulso para el estado */
+        .pulse { animation: pulso 2s infinite; }
+        @keyframes pulso { 0% { transform: scale(1); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
     </style>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, push, set, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { getDatabase, ref, push, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
         const firebaseConfig = {
           apiKey: "AIzaSyCDHfrf1njnrhFuKiqZmPw39lEiXdOEcuc",
@@ -61,8 +93,8 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // Comprobar si ya pidió una canción
         let miCancionId = localStorage.getItem('sanJuanCancionId');
+        let ultimoEstado = "";
 
         window.onload = () => {
             if (miCancionId) {
@@ -71,21 +103,33 @@
             }
         };
 
+        window.pedirPermisoNotificaciones = function() {
+            if ("Notification" in window && Notification.permission !== "granted") {
+                Notification.requestPermission();
+            }
+        };
+
         window.enviarCancion = function() {
+            pedirPermisoNotificaciones(); // Pedimos permiso al hacer clic
+            
             const nombre = document.getElementById('nombre').value;
             const cancion = document.getElementById('cancion').value;
             
             if(nombre && cancion) {
+                const btn = document.getElementById('btn-enviar');
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Conectando...';
+                
                 const listaRef = ref(db, 'peticiones');
                 const nuevaPeticionRef = push(listaRef);
-                set(nuevaPeticionRef, { usuario: nombre, tema: cancion, estado: "En cola 🕒" });
-                
-                // Guardamos su ID secreto en el navegador
-                miCancionId = nuevaPeticionRef.key;
-                localStorage.setItem('sanJuanCancionId', miCancionId);
-                
-                mostrarPantallaEstado();
-                escucharMiCancion();
+                set(nuevaPeticionRef, { usuario: nombre, tema: cancion, estado: "En cola 🕒" }).then(() => {
+                    miCancionId = nuevaPeticionRef.key;
+                    localStorage.setItem('sanJuanCancionId', miCancionId);
+                    ultimoEstado = "En cola 🕒";
+                    
+                    mostrarPantallaEstado();
+                    escucharMiCancion();
+                    btn.innerHTML = '¡Enviar al DJ! <i class="fas fa-rocket"></i>';
+                });
             } else {
                 alert("¡Eh! Faltan datos 🔥");
             }
@@ -96,28 +140,58 @@
             document.getElementById('pantalla-estado').classList.remove('oculto');
         }
 
-        window.pedirOtra = function() {
+        window.pedirOtra = async function() {
+            // Borramos la canción de la base de datos para limpiar la cola del DJ
+            if(miCancionId) {
+                await remove(ref(db, 'peticiones/' + miCancionId));
+            }
+            // Reseteamos la web
             localStorage.removeItem('sanJuanCancionId');
+            miCancionId = null;
             document.getElementById('pantalla-estado').classList.add('oculto');
             document.getElementById('form-pedir').classList.remove('oculto');
             document.getElementById('cancion').value = "";
+            document.getElementById('btn-pedir-otra').classList.add('oculto'); // Esconder el botón de nuevo
         }
 
         function escucharMiCancion() {
+            if(!miCancionId) return;
             const miCancionRef = ref(db, 'peticiones/' + miCancionId);
+            
             onValue(miCancionRef, (snapshot) => {
                 const data = snapshot.val();
                 if (data) {
                     const textoEstado = document.getElementById('texto-estado');
-                    textoEstado.innerText = data.estado;
+                    textoEstado.innerHTML = `<i class="fas fa-music"></i> <br><br> ${data.estado}`;
                     
-                    // Efecto confeti si le toca
-                    if(data.estado.includes("escenario") || data.estado.includes("siguiente")) {
-                        confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+                    // Comprobar si el estado ha cambiado para lanzar NOTIFICACIÓN
+                    if (ultimoEstado !== "" && data.estado !== ultimoEstado) {
+                        if ("Notification" in window && Notification.permission === "granted") {
+                            new Notification("🎧 VIP Music San Juan", {
+                                body: "Tu canción ha cambiado a: " + data.estado,
+                                icon: "https://cdn-icons-png.flaticon.com/512/1753/1753311.png"
+                            });
+                        }
                     }
+                    ultimoEstado = data.estado;
+                    
+                    // Efecto confeti
+                    if(data.estado.includes("ESCENARIO") || data.estado.includes("Siguiente")) {
+                        confetti({ particleCount: 150, spread: 80, origin: { y: 0.5 }, colors: ['#00c6ff', '#0072ff', '#ffffff'] });
+                    }
+
+                    // Mostrar el botón de "Pedir otra" SOLO si está Finalizado o No Disponible
+                    const btnOtra = document.getElementById('btn-pedir-otra');
+                    if(data.estado.includes("Finalizado") || data.estado.includes("No Disponible")) {
+                        btnOtra.classList.remove('oculto');
+                    } else {
+                        btnOtra.classList.add('oculto');
+                    }
+
                 } else {
-                    // Si el DJ la borra, le dejamos pedir otra
-                    document.getElementById('texto-estado').innerText = "¡Canción terminada! 🎵";
+                    // Si el DJ la borra a la fuerza
+                    document.getElementById('texto-estado').innerText = "La sesión ha terminado 🎵";
+                    document.getElementById('btn-pedir-otra').classList.remove('oculto');
                 }
             });
         }
@@ -125,19 +199,29 @@
 </head>
 <body>
 
-    <h1>🔥 Noche de San Juan 🔥</h1>
+    <div class="glass-card">
+        <h1>SAN JUAN 2026</h1>
+        <p class="subtitle">Live DJ Request System</p>
 
-    <div id="form-pedir" class="card">
-        <h3>Pide tu temazo</h3>
-        <input type="text" id="nombre" placeholder="Tu Nombre o Apodo">
-        <input type="text" id="cancion" placeholder="Canción y Artista">
-        <button onclick="enviarCancion()">¡Darle Caña! 🚀</button>
-    </div>
+        <div id="form-pedir">
+            <div class="input-group">
+                <i class="fas fa-user"></i>
+                <input type="text" id="nombre" placeholder="Tu Nombre o Apodo">
+            </div>
+            <div class="input-group">
+                <i class="fas fa-compact-disc fa-spin-hover"></i>
+                <input type="text" id="cancion" placeholder="Canción y Artista">
+            </div>
+            <button id="btn-enviar" onclick="enviarCancion()">¡Enviar al DJ! <i class="fas fa-rocket"></i></button>
+        </div>
 
-    <div id="pantalla-estado" class="card oculto">
-        <h3>Estado de tu petición:</h3>
-        <div id="texto-estado" class="estado-box">Cargando...</div>
-        <button onclick="pedirOtra()" style="background: #555; padding: 10px; font-size: 14px;">Pedir otra canción 🔄</button>
+        <div id="pantalla-estado" class="oculto">
+            <h3 style="font-weight: 500; font-size: 14px; color: #ccc;">STATUS DE TU TRACK:</h3>
+            <div id="texto-estado" class="estado-box pulse">Conectando...</div>
+            <p style="font-size: 12px; color: #888; margin-bottom: 10px;"><i class="fas fa-bell"></i> Activa el sonido, te avisaremos cuando sea tu turno.</p>
+            
+            <button id="btn-pedir-otra" class="btn-secondary oculto" onclick="pedirOtra()">Elegir nueva pista <i class="fas fa-redo"></i></button>
+        </div>
     </div>
 
 </body>
