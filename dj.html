@@ -13,8 +13,9 @@
         .cancion-card { 
             background: #151515; border-left: 5px solid #00ffcc; padding: 20px; margin-bottom: 15px; 
             border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); display: flex; flex-direction: column; gap: 15px;
+            position: relative;
         }
-        .info h3 { margin: 0 0 5px 0; font-size: 20px; }
+        .info h3 { margin: 0 0 5px 0; font-size: 20px; display: flex; align-items: center; justify-content: space-between;}
         .info p { margin: 0; color: #888; font-weight: bold; }
         
         .botones { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -24,6 +25,7 @@
         }
         button:hover { opacity: 0.8; transform: scale(1.05); }
         
+        .btn-orden { background: #333; color: white; padding: 5px 10px; font-size: 16px;}
         .btn-cola { background: #555; color: white; }
         .btn-sig { background: #ff9800; color: white; }
         .btn-esc { background: #00ffcc; color: black; }
@@ -49,41 +51,76 @@
         };
 
         const db = getDatabase(initializeApp(firebaseConfig));
+        let tracksLocales = []; // Para gestionar el reordenamiento
 
         window.cambiarEstado = (id, estado) => update(ref(db, 'peticiones/' + id), { estado });
         window.borrarCancion = (id) => remove(ref(db, 'peticiones/' + id));
 
+        window.mover = (index, direccion) => {
+            if (direccion === 'arriba' && index > 0) {
+                let idActual = tracksLocales[index].id;
+                let idAnterior = tracksLocales[index - 1].id;
+                let timeActual = tracksLocales[index].timestamp;
+                let timeAnterior = tracksLocales[index - 1].timestamp;
+                
+                // Intercambiamos los timestamps en la base de datos
+                update(ref(db, 'peticiones/' + idActual), { timestamp: timeAnterior });
+                update(ref(db, 'peticiones/' + idAnterior), { timestamp: timeActual });
+            } else if (direccion === 'abajo' && index < tracksLocales.length - 1) {
+                let idActual = tracksLocales[index].id;
+                let idSiguiente = tracksLocales[index + 1].id;
+                let timeActual = tracksLocales[index].timestamp;
+                let timeSiguiente = tracksLocales[index + 1].timestamp;
+
+                update(ref(db, 'peticiones/' + idActual), { timestamp: timeSiguiente });
+                update(ref(db, 'peticiones/' + idSiguiente), { timestamp: timeActual });
+            }
+        };
+
         onValue(ref(db, 'peticiones'), (snapshot) => {
+            const data = snapshot.val();
             const listaDiv = document.getElementById('lista');
             listaDiv.innerHTML = ""; 
-            let hayCanciones = false;
-            
-            // forEach garantiza el orden cronológico perfecto
-            snapshot.forEach((childSnapshot) => {
-                hayCanciones = true;
-                const id = childSnapshot.key;
-                const track = childSnapshot.val();
-                
-                listaDiv.innerHTML += `
-                <div class="cancion-card">
-                    <div class="info">
-                        <h3><i class="fas fa-user-circle"></i> ${track.usuario}</h3>
-                        <p><i class="fas fa-music"></i> Track: <span style="color:#fff;">${track.tema}</span></p>
-                        <p style="margin-top:5px; color:#00ffcc;"><i class="fas fa-broadcast-tower"></i> Estado: ${track.estado}</p>
-                    </div>
-                    <div class="botones">
-                        <button class="btn-cola" onclick="cambiarEstado('${id}', 'En cola 🕒')">En Cola</button>
-                        <button class="btn-sig" onclick="cambiarEstado('${id}', '¡Prepárate! Siguiente 🎤')">Siguiente</button>
-                        <button class="btn-esc" onclick="cambiarEstado('${id}', '¡AL ESCENARIO! 🔥')">Escenario</button>
-                        <button class="btn-no" onclick="cambiarEstado('${id}', 'No Disponible ❌ (Pide otra)')">No Disponible</button>
-                        <button class="btn-fin" onclick="cambiarEstado('${id}', 'Finalizado ✅')">Finalizado</button>
-                        
-                        <button class="btn-borrar" onclick="borrarCancion('${id}')"><i class="fas fa-trash"></i> Borrar</button>
-                    </div>
-                </div>`;
-            });
+            tracksLocales = [];
 
-            if (!hayCanciones) {
+            if (data) {
+                for (let id in data) tracksLocales.push({ id, ...data[id] });
+                // Ordenar por el timestamp (orden cronológico o alterado por el DJ)
+                tracksLocales.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+
+                // 🧠 Lógica Inteligente: Auto-Siguiente
+                let primerActivo = tracksLocales.find(t => !t.estado.includes("Finalizado") && !t.estado.includes("No Disponible") && !t.estado.includes("ESCENARIO"));
+                if (primerActivo && primerActivo.estado.includes("En cola")) {
+                    cambiarEstado(primerActivo.id, '¡Prepárate! Siguiente 🎤');
+                    return; // Cortamos aquí porque esto volverá a disparar onValue automáticamente
+                }
+
+                tracksLocales.forEach((track, index) => {
+                    listaDiv.innerHTML += `
+                    <div class="cancion-card">
+                        <div class="info">
+                            <h3>
+                                <span><i class="fas fa-user-circle"></i> ${track.usuario}</span>
+                                <div>
+                                    <button class="btn-orden" onclick="mover(${index}, 'arriba')"><i class="fas fa-chevron-up"></i></button>
+                                    <button class="btn-orden" onclick="mover(${index}, 'abajo')"><i class="fas fa-chevron-down"></i></button>
+                                </div>
+                            </h3>
+                            <p><i class="fas fa-music"></i> Track: <span style="color:#fff;">${track.tema}</span></p>
+                            <p style="margin-top:5px; color:#00ffcc;"><i class="fas fa-broadcast-tower"></i> Estado: ${track.estado}</p>
+                        </div>
+                        <div class="botones">
+                            <button class="btn-cola" onclick="cambiarEstado('${track.id}', 'En cola 🕒')">En Cola</button>
+                            <button class="btn-sig" onclick="cambiarEstado('${track.id}', '¡Prepárate! Siguiente 🎤')">Siguiente</button>
+                            <button class="btn-esc" onclick="cambiarEstado('${track.id}', '¡AL ESCENARIO! 🔥')">Escenario</button>
+                            <button class="btn-no" onclick="cambiarEstado('${track.id}', 'No Disponible ❌ (Pide otra)')">No Disponible</button>
+                            <button class="btn-fin" onclick="cambiarEstado('${track.id}', 'Finalizado ✅')">Finalizado</button>
+                            
+                            <button class="btn-borrar" onclick="borrarCancion('${track.id}')"><i class="fas fa-trash"></i> Borrar</button>
+                        </div>
+                    </div>`;
+                });
+            } else {
                 listaDiv.innerHTML = "<h3 style='color:#555;'><i class='fas fa-compact-disc fa-spin'></i> La pista de baile está vacía...</h3>";
             }
         });
