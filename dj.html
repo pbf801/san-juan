@@ -8,35 +8,19 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
-        body { 
-            font-family: 'Montserrat', sans-serif; 
-            background: #0a0a0a; 
-            color: #fff; 
-            padding: 30px; 
-            margin: 0;
-        }
+        body { font-family: 'Montserrat', sans-serif; background: #0a0a0a; color: #fff; padding: 30px; margin: 0; }
         h1 { color: #00ffcc; text-transform: uppercase; font-weight: 900; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 30px;}
         .cancion-card { 
-            background: #151515; 
-            border-left: 5px solid #00ffcc; 
-            padding: 20px; 
-            margin-bottom: 15px; 
-            border-radius: 8px; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-            transition: 0.3s;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
+            background: #151515; border-left: 5px solid #00ffcc; padding: 20px; margin-bottom: 15px; 
+            border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); display: flex; flex-direction: column; gap: 15px;
         }
-        .cancion-card:hover { transform: translateX(5px); }
         .info h3 { margin: 0 0 5px 0; font-size: 20px; }
         .info p { margin: 0; color: #888; font-weight: bold; }
         
         .botones { display: flex; gap: 8px; flex-wrap: wrap; }
         button { 
-            border: none; padding: 10px 15px; border-radius: 6px; 
-            cursor: pointer; font-weight: bold; font-family: 'Montserrat';
-            transition: 0.2s; font-size: 13px; text-transform: uppercase;
+            border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; 
+            font-family: 'Montserrat'; transition: 0.2s; font-size: 13px; text-transform: uppercase;
         }
         button:hover { opacity: 0.8; transform: scale(1.05); }
         
@@ -70,31 +54,36 @@
         window.borrarCancion = (id) => remove(ref(db, 'peticiones/' + id));
 
         onValue(ref(db, 'peticiones'), (snapshot) => {
-            const data = snapshot.val();
             const listaDiv = document.getElementById('lista');
             listaDiv.innerHTML = ""; 
+            let hayCanciones = false;
             
-            if (data) {
-                for (let id in data) {
-                    listaDiv.innerHTML += `
-                    <div class="cancion-card">
-                        <div class="info">
-                            <h3><i class="fas fa-user-circle"></i> ${data[id].usuario}</h3>
-                            <p><i class="fas fa-music"></i> Track: <span style="color:#fff;">${data[id].tema}</span></p>
-                            <p style="margin-top:5px; color:#00ffcc;"><i class="fas fa-broadcast-tower"></i> Estado: ${data[id].estado}</p>
-                        </div>
-                        <div class="botones">
-                            <button class="btn-cola" onclick="cambiarEstado('${id}', 'En cola 🕒')">En Cola</button>
-                            <button class="btn-sig" onclick="cambiarEstado('${id}', '¡Prepárate! Siguiente 🎤')">Siguiente</button>
-                            <button class="btn-esc" onclick="cambiarEstado('${id}', '¡AL ESCENARIO! 🔥')">Escenario</button>
-                            <button class="btn-no" onclick="cambiarEstado('${id}', 'No Disponible ❌ (Pide otra)')">No Disponible</button>
-                            <button class="btn-fin" onclick="cambiarEstado('${id}', 'Finalizado ✅')">Finalizado</button>
-                            
-                            <button class="btn-borrar" onclick="borrarCancion('${id}')"><i class="fas fa-trash"></i> Borrar</button>
-                        </div>
-                    </div>`;
-                }
-            } else {
+            // forEach garantiza el orden cronológico perfecto
+            snapshot.forEach((childSnapshot) => {
+                hayCanciones = true;
+                const id = childSnapshot.key;
+                const track = childSnapshot.val();
+                
+                listaDiv.innerHTML += `
+                <div class="cancion-card">
+                    <div class="info">
+                        <h3><i class="fas fa-user-circle"></i> ${track.usuario}</h3>
+                        <p><i class="fas fa-music"></i> Track: <span style="color:#fff;">${track.tema}</span></p>
+                        <p style="margin-top:5px; color:#00ffcc;"><i class="fas fa-broadcast-tower"></i> Estado: ${track.estado}</p>
+                    </div>
+                    <div class="botones">
+                        <button class="btn-cola" onclick="cambiarEstado('${id}', 'En cola 🕒')">En Cola</button>
+                        <button class="btn-sig" onclick="cambiarEstado('${id}', '¡Prepárate! Siguiente 🎤')">Siguiente</button>
+                        <button class="btn-esc" onclick="cambiarEstado('${id}', '¡AL ESCENARIO! 🔥')">Escenario</button>
+                        <button class="btn-no" onclick="cambiarEstado('${id}', 'No Disponible ❌ (Pide otra)')">No Disponible</button>
+                        <button class="btn-fin" onclick="cambiarEstado('${id}', 'Finalizado ✅')">Finalizado</button>
+                        
+                        <button class="btn-borrar" onclick="borrarCancion('${id}')"><i class="fas fa-trash"></i> Borrar</button>
+                    </div>
+                </div>`;
+            });
+
+            if (!hayCanciones) {
                 listaDiv.innerHTML = "<h3 style='color:#555;'><i class='fas fa-compact-disc fa-spin'></i> La pista de baile está vacía...</h3>";
             }
         });
