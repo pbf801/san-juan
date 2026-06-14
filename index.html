@@ -48,7 +48,6 @@
         button:hover { transform: translateY(-3px); box-shadow: 0 15px 25px rgba(0, 114, 255, 0.5); }
         .btn-secondary { background: rgba(255,255,255,0.1); box-shadow: none; border: 1px solid rgba(255,255,255,0.2); margin-top: 20px;}
 
-        /* Nuevas tarjetas de info del usuario */
         .info-track { background: rgba(0,0,0,0.4); padding: 15px; border-radius: 12px; margin-bottom: 15px; text-align: left; border-left: 4px solid #00c6ff;}
         .info-track p { margin: 5px 0; font-size: 14px; color: #ccc;}
         .info-track span { color: #fff; font-weight: bold; font-size: 16px;}
@@ -93,7 +92,8 @@
                 
                 const listaRef = ref(db, 'peticiones');
                 const nuevaPeticionRef = push(listaRef);
-                set(nuevaPeticionRef, { usuario: nombre, tema: cancion, estado: "En cola 🕒" }).then(() => {
+                // Añadimos un timestamp para poder reordenar fácilmente
+                set(nuevaPeticionRef, { usuario: nombre, tema: cancion, estado: "En cola 🕒", timestamp: Date.now() }).then(() => {
                     miCancionId = nuevaPeticionRef.key;
                     localStorage.setItem('sanJuanCancionId', miCancionId);
                     ultimoEstado = "En cola 🕒";
@@ -118,7 +118,6 @@
             document.getElementById('btn-pedir-otra').classList.add('oculto'); 
         }
 
-        // Nueva función: Escucha toda la cola para calcular la posición
         function escucharColaCompleta() {
             if(!miCancionId) return;
             const listaRef = ref(db, 'peticiones');
@@ -128,34 +127,32 @@
                 if (data && data[miCancionId]) {
                     const miTrack = data[miCancionId];
                     
-                    // 1. Mostrar detalles de mi canción
                     document.getElementById('track-elegido').innerText = miTrack.tema;
                     document.getElementById('usuario-elegido').innerText = miTrack.usuario;
                     
-                    // 2. Calcular mi posición en la cola
+                    // Ordenamos las pistas por su timestamp para saber la posición real
+                    let tracksArray = [];
+                    for (let id in data) tracksArray.push({ id, ...data[id] });
+                    tracksArray.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+
                     let miPosicion = 0;
-                    // Firebase asegura que Object.keys mantenga el orden cronológico de creación
-                    for (let id of Object.keys(data)) {
-                        const estado = data[id].estado;
-                        // Solo contamos las que aún no han sonado o están activas
-                        if (!estado.includes("Finalizado") && !estado.includes("No Disponible")) {
+                    for (let track of tracksArray) {
+                        if (!track.estado.includes("Finalizado") && !track.estado.includes("No Disponible") && !track.estado.includes("ESCENARIO")) {
                             miPosicion++;
-                            if (id === miCancionId) break; // Si llegamos a la nuestra, paramos de contar
+                            if (track.id === miCancionId) break; 
                         }
                     }
 
-                    // 3. Mostrar el estado y la posición
                     document.getElementById('texto-estado').innerHTML = miTrack.estado;
                     
                     const divPosicion = document.getElementById('posicion-box');
-                    if (miTrack.estado.includes("Finalizado") || miTrack.estado.includes("No Disponible") || miTrack.estado.includes("ESCENARIO")) {
-                        divPosicion.classList.add('oculto'); // Ocultamos el número si ya terminó o le toca
+                    if (miTrack.estado.includes("Finalizado") || miTrack.estado.includes("No Disponible") || miTrack.estado.includes("ESCENARIO") || miTrack.estado.includes("Siguiente")) {
+                        divPosicion.classList.add('oculto'); 
                     } else {
                         divPosicion.classList.remove('oculto');
                         document.getElementById('num-posicion').innerText = miPosicion;
                     }
 
-                    // 4. Lógica de Notificaciones y Confeti
                     if (ultimoEstado !== "" && miTrack.estado !== ultimoEstado) {
                         if ("Notification" in window && Notification.permission === "granted") {
                             new Notification("🎧 VIP Music San Juan", { body: "Tu canción ha cambiado a: " + miTrack.estado });
@@ -167,7 +164,6 @@
                         confetti({ particleCount: 150, spread: 80, origin: { y: 0.5 }, colors: ['#00c6ff', '#0072ff', '#ffffff'] });
                     }
 
-                    // 5. Mostrar botón "Pedir otra" si es necesario
                     const btnOtra = document.getElementById('btn-pedir-otra');
                     if(miTrack.estado.includes("Finalizado") || miTrack.estado.includes("No Disponible")) {
                         btnOtra.classList.remove('oculto');
@@ -176,7 +172,6 @@
                     }
 
                 } else if (miCancionId) {
-                    // Si el DJ la borra a la fuerza de la base de datos
                     document.getElementById('texto-estado').innerText = "La sesión ha terminado 🎵";
                     document.getElementById('posicion-box').classList.add('oculto');
                     document.getElementById('btn-pedir-otra').classList.remove('oculto');
@@ -204,7 +199,6 @@
         </div>
 
         <div id="pantalla-estado" class="oculto">
-            
             <div class="info-track">
                 <p><i class="fas fa-music"></i> Track: <span id="track-elegido">...</span></p>
                 <p><i class="fas fa-user-circle"></i> VIP: <span id="usuario-elegido">...</span></p>
