@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cabina del DJ 🎧</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #000; color: #00ffcc; padding: 20px; }
+        .cancion-card { background: #111; border-left: 4px solid #00ffcc; padding: 15px; margin-bottom: 10px; border-radius: 4px; }
+        button { border: none; padding: 8px 12px; margin-right: 5px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .btn-sig { background: #ff9800; color: white; }
+        .btn-esc { background: #4CAF50; color: white; }
+        .btn-borrar { background: #f44336; color: white; float: right; }
+    </style>
+    <script>
+        // Miniseguridad para el DJ
+        let pass = prompt("Contraseña de la cabina:");
+        if (pass !== "fuego2026") {
+            window.location.href = "index.html"; // Lo echamos a la web normal
+        }
+    </script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        const firebaseConfig = {
+          apiKey: "AIzaSyCDHfrf1njnrhFuKiqZmPw39lEiXdOEcuc",
+          authDomain: "sanjuan-music.firebaseapp.com",
+          databaseURL: "https://sanjuan-music-default-rtdb.europe-west1.firebasedatabase.app",
+          projectId: "sanjuan-music"
+        };
+
+        const db = getDatabase(initializeApp(firebaseConfig));
+
+        window.cambiarEstado = (id, estado) => update(ref(db, 'peticiones/' + id), { estado });
+        window.borrarCancion = (id) => remove(ref(db, 'peticiones/' + id));
+
+        onValue(ref(db, 'peticiones'), (snapshot) => {
+            const data = snapshot.val();
+            const listaDiv = document.getElementById('lista');
+            listaDiv.innerHTML = ""; 
+            
+            if (data) {
+                for (let id in data) {
+                    listaDiv.innerHTML += `
+                    <div class="cancion-card">
+                        <h3 style="margin:0 0 10px 0;">${data[id].usuario} - ${data[id].tema}</h3>
+                        <p style="margin:0 0 10px 0; color:#888;">Status: ${data[id].estado}</p>
+                        <button class="btn-sig" onclick="cambiarEstado('${id}', '¡Eres el siguiente! 🎤')">Siguiente</button>
+                        <button class="btn-esc" onclick="cambiarEstado('${id}', '¡AL ESCENARIO! 🏃‍♂️💨')">Al Escenario</button>
+                        <button class="btn-borrar" onclick="borrarCancion('${id}')">Borrar ❌</button>
+                    </div>`;
+                }
+            } else {
+                listaDiv.innerHTML = "<h3>La pista está vacía...</h3>";
+            }
+        });
+    </script>
+</head>
+<body>
+    <h1>🎛️ Panel de Control DJ</h1>
+    <div id="lista">Cargando la magia...</div>
+</body>
+</html>
