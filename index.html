@@ -3,29 +3,74 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>San Juan DJ App</title>
+    <title>San Juan 2026 - Pide tu canción</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #111;
+            color: #fff;
+            text-align: center;
+            padding: 20px;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        h1 { color: #ff5722; text-shadow: 0 0 10px #ff5722; animation: latir 2s infinite; }
+        .card {
+            background: #222;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(255, 87, 34, 0.2);
+            width: 100%;
+            max-width: 400px;
+            transition: transform 0.3s;
+        }
+        input {
+            width: 90%; padding: 12px; margin: 10px 0;
+            border-radius: 8px; border: none; background: #333; color: white;
+            font-size: 16px; text-align: center;
+        }
+        button {
+            background: linear-gradient(45deg, #ff5722, #ff9800);
+            color: white; border: none; padding: 15px 30px; font-size: 18px;
+            border-radius: 25px; cursor: pointer; font-weight: bold; width: 100%;
+            margin-top: 15px; box-shadow: 0 4px 15px rgba(255, 87, 34, 0.4);
+        }
+        button:hover { transform: scale(1.05); }
+        .estado-box { font-size: 24px; font-weight: bold; margin: 20px 0; color: #4CAF50; }
+        .oculto { display: none; }
+        @keyframes latir { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+    </style>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, push, set, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { getDatabase, ref, push, set, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-        // Tu configuración exacta de Firebase
         const firebaseConfig = {
           apiKey: "AIzaSyCDHfrf1njnrhFuKiqZmPw39lEiXdOEcuc",
           authDomain: "sanjuan-music.firebaseapp.com",
           databaseURL: "https://sanjuan-music-default-rtdb.europe-west1.firebasedatabase.app",
-          projectId: "sanjuan-music",
-          storageBucket: "sanjuan-music.firebasestorage.app",
-          messagingSenderId: "324864950993",
-          appId: "1:324864950993:web:f3ce7ac4649960f2413bf0",
-          measurementId: "G-WT0MSHLHTJ"
+          projectId: "sanjuan-music"
         };
 
-        // Inicializar Firebase
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // 1. FUNCIÓN PARA EL INVITADO: Enviar canción
+        // Comprobar si ya pidió una canción
+        let miCancionId = localStorage.getItem('sanJuanCancionId');
+
+        window.onload = () => {
+            if (miCancionId) {
+                mostrarPantallaEstado();
+                escucharMiCancion();
+            }
+        };
+
         window.enviarCancion = function() {
             const nombre = document.getElementById('nombre').value;
             const cancion = document.getElementById('cancion').value;
@@ -33,71 +78,66 @@
             if(nombre && cancion) {
                 const listaRef = ref(db, 'peticiones');
                 const nuevaPeticionRef = push(listaRef);
-                set(nuevaPeticionRef, {
-                    usuario: nombre,
-                    tema: cancion,
-                    estado: "En cola 🕒"
-                });
-                alert("¡Canción enviada con éxito!");
-                document.getElementById('cancion').value = ""; 
+                set(nuevaPeticionRef, { usuario: nombre, tema: cancion, estado: "En cola 🕒" });
+                
+                // Guardamos su ID secreto en el navegador
+                miCancionId = nuevaPeticionRef.key;
+                localStorage.setItem('sanJuanCancionId', miCancionId);
+                
+                mostrarPantallaEstado();
+                escucharMiCancion();
             } else {
-                alert("Por favor, rellena tu nombre y la canción.");
+                alert("¡Eh! Faltan datos 🔥");
             }
         }
 
-        // 2. FUNCIONES PARA EL DJ: Cambiar estado y Borrar
-        window.cambiarEstado = function(id, nuevoEstado) {
-            const cancionRef = ref(db, 'peticiones/' + id);
-            update(cancionRef, { estado: nuevoEstado });
+        function mostrarPantallaEstado() {
+            document.getElementById('form-pedir').classList.add('oculto');
+            document.getElementById('pantalla-estado').classList.remove('oculto');
         }
 
-        window.borrarCancion = function(id) {
-            if(confirm("¿Seguro que quieres borrar esta canción?")) {
-                const cancionRef = ref(db, 'peticiones/' + id);
-                remove(cancionRef);
-            }
+        window.pedirOtra = function() {
+            localStorage.removeItem('sanJuanCancionId');
+            document.getElementById('pantalla-estado').classList.add('oculto');
+            document.getElementById('form-pedir').classList.remove('oculto');
+            document.getElementById('cancion').value = "";
         }
 
-        // 3. LEER DATOS EN TIEMPO REAL (Y crear los botones del DJ)
-        const listaRef = ref(db, 'peticiones');
-        onValue(listaRef, (snapshot) => {
-            const data = snapshot.val();
-            const listaDiv = document.getElementById('listaDJ');
-            listaDiv.innerHTML = ""; 
-            
-            if (data) {
-                for (let id in data) {
-                    // Creamos una "tarjeta" para cada canción con sus botones
-                    listaDiv.innerHTML += `
-                    <div style="background: white; padding: 10px; margin-bottom: 10px; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                        <p style="margin: 0 0 10px 0;"><strong>${data[id].usuario}</strong> pide: <strong>${data[id].tema}</strong> <br> 
-                        <span style="color: #666;">Estado: ${data[id].estado}</span></p>
-                        
-                        <button onclick="cambiarEstado('${id}', '¡Eres el siguiente! 🎤')" style="background: #4CAF50; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer;">Avisar: Siguiente</button>
-                        <button onclick="cambiarEstado('${id}', '¡Al escenario! 🏃‍♂️💨')" style="background: #2196F3; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer;">Avisar: Escenario</button>
-                        <button onclick="borrarCancion('${id}')" style="background: #f44336; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer;">Borrar ❌</button>
-                    </div>`;
+        function escucharMiCancion() {
+            const miCancionRef = ref(db, 'peticiones/' + miCancionId);
+            onValue(miCancionRef, (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    const textoEstado = document.getElementById('texto-estado');
+                    textoEstado.innerText = data.estado;
+                    
+                    // Efecto confeti si le toca
+                    if(data.estado.includes("escenario") || data.estado.includes("siguiente")) {
+                        confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+                    }
+                } else {
+                    // Si el DJ la borra, le dejamos pedir otra
+                    document.getElementById('texto-estado').innerText = "¡Canción terminada! 🎵";
                 }
-            } else {
-                listaDiv.innerHTML = "<p>Aún no hay canciones en la cola.</p>";
-            }
-        });
+            });
+        }
     </script>
 </head>
-<body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
+<body>
 
-    <h1 style="text-align: center;">🔥 Verbena San Juan 2026 🔥</h1>
+    <h1>🔥 Noche de San Juan 🔥</h1>
 
-    <div style="border: 2px solid orange; border-radius: 10px; padding: 15px; margin-bottom: 30px; background-color: #fff9f0;">
-        <h2>Pedir Canción (Vista Invitado)</h2>
-        <input type="text" id="nombre" placeholder="Tu Nombre" style="padding: 8px; width: 90%; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px;"><br>
-        <input type="text" id="cancion" placeholder="Nombre de la canción y artista" style="padding: 8px; width: 90%; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px;"><br>
-        <button onclick="enviarCancion()" style="padding: 10px 20px; background-color: orange; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">Enviar al DJ</button>
+    <div id="form-pedir" class="card">
+        <h3>Pide tu temazo</h3>
+        <input type="text" id="nombre" placeholder="Tu Nombre o Apodo">
+        <input type="text" id="cancion" placeholder="Canción y Artista">
+        <button onclick="enviarCancion()">¡Darle Caña! 🚀</button>
     </div>
 
-    <div style="border: 2px solid blue; border-radius: 10px; padding: 15px; background-color: #e3f2fd;">
-        <h2>Panel del DJ</h2>
-        <div id="listaDJ">Cargando canciones...</div>
+    <div id="pantalla-estado" class="card oculto">
+        <h3>Estado de tu petición:</h3>
+        <div id="texto-estado" class="estado-box">Cargando...</div>
+        <button onclick="pedirOtra()" style="background: #555; padding: 10px; font-size: 14px;">Pedir otra canción 🔄</button>
     </div>
 
 </body>
