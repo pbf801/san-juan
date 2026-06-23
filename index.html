@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>San Juan 2026 | VIP Music</title>
+    <title>San Juan 2026 | Karaoke </title>
     
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;500;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -99,7 +99,7 @@
                     ultimoEstado = "En cola 🕒";
                     mostrarPantallaEstado();
                     escucharColaCompleta();
-                    btn.innerHTML = '¡Enviar al DJ! <i class="fas fa-rocket"></i>';
+                    btn.innerHTML = '¡Apúntate ahora! <i class="fas fa-rocket"></i>';
                 });
             } else { alert("¡Eh! Faltan datos 🔥"); }
         }
@@ -155,7 +155,7 @@
 
                     if (ultimoEstado !== "" && miTrack.estado !== ultimoEstado) {
                         if ("Notification" in window && Notification.permission === "granted") {
-                            new Notification("🎧 VIP Music San Juan", { body: "Tu canción ha cambiado a: " + miTrack.estado });
+                            new Notification("🎧 Karaoke San Juan", { body: "Tu canción ha cambiado a: " + miTrack.estado });
                         }
                     }
                     ultimoEstado = miTrack.estado;
@@ -184,7 +184,7 @@
 
     <div class="glass-card">
         <h1>SAN JUAN 2026</h1>
-        <p class="subtitle">Live DJ Request System</p>
+        <p class="subtitle">LIVE Karaoke</p>
 
         <div id="form-pedir">
             <div class="input-group">
@@ -195,13 +195,13 @@
                 <i class="fas fa-compact-disc fa-spin-hover"></i>
                 <input type="text" id="cancion" placeholder="Canción y Artista">
             </div>
-            <button id="btn-enviar" onclick="enviarCancion()">¡Enviar al DJ! <i class="fas fa-rocket"></i></button>
+            <button id="btn-enviar" onclick="enviarCancion()">¡Apúntate Ahora! <i class="fas fa-rocket"></i></button>
         </div>
 
         <div id="pantalla-estado" class="oculto">
             <div class="info-track">
                 <p><i class="fas fa-music"></i> Track: <span id="track-elegido">...</span></p>
-                <p><i class="fas fa-user-circle"></i> VIP: <span id="usuario-elegido">...</span></p>
+                <p><i class="fas fa-user-circle"></i> Nombre: <span id="usuario-elegido">...</span></p>
             </div>
 
             <div id="posicion-box" class="posicion-box pulse">
